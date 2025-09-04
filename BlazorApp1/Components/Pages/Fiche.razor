@@ -1,6 +1,4 @@
 ﻿@* <div class="fiche" style="background-color: @Color;" @onclick="Flip"/> *@
-@using BlazorApp1.Components.Pages
-
 <div class="fiche @(isFlipped ? "flip" : "")" style="background-color: @(Color == Colors.Red ? "red" : Color == Colors.Blue ? "blue" : "white");" @onclick="Flip" />
 
 @code {
