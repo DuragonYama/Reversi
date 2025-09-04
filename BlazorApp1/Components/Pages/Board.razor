@@ -1,16 +1,39 @@
 ﻿<div class="Board">
-  @for (int row = 0; row < Height; row++)
-  {
-    @for (int column = 0; column < Width; column++)
-    {
-      <Fiche Color="Colors.White"/>
-    }
-  }
+    <div class="row">
+        @for (int row = 0; row < Height; row++)
+        {
+            <div class="column">
+                @for (int column = 0; column < Width; column++)
+                {
+                    <Fiche Color="@Boardstate[row, column]" />
+                }
+            </div>
+        }
+    </div>
 </div>
 
 @code {
-  public int Width { get; set; } = 8;
+    public int Width { get; set; } = 8;
+    public int Height { get; set; } = 8;
 
-  public int Height { get; set; } = 8;
+    public Colors[,] Boardstate { get; set; }
 
+    public bool IsPlayerOneTurn { get; set; } = true;
+
+    protected override void OnInitialized()
+    {
+        Boardstate = new Colors[Height, Width];
+
+        for (int row = 0; row < Height; row++)
+        {
+            for (int col = 0; col < Width; col++)
+            {
+                Boardstate[row, col] = Colors.White;
+            }
+        }
+        Boardstate[3, 3] = Colors.Blue;
+        Boardstate[3, 4] = Colors.Blue;
+        Boardstate[4, 3] = Colors.Red;
+        Boardstate[4, 4] = Colors.Red;
+    }
 }

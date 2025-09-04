@@ -1,16 +1,23 @@
-﻿<div class="fiche" style="background-color: @Color;" @onclick="Flip"/>
+﻿@* <div class="fiche" style="background-color: @Color;" @onclick="Flip"/> *@
+@using BlazorApp1.Components.Pages
+
+<div class="fiche @(isFlipped ? "flip" : "")" style="background-color: @(Color == Colors.Red ? "red" : Color == Colors.Blue ? "blue" : "white");" @onclick="Flip" />
 
 @code {
-  [Parameter]
-  public Colors Color { get; set; }
+    [Parameter]
+    public Colors Color { get; set; }
 
-  void Flip()
-  {
-    Color = Color switch
+    private bool isFlipped = false;
+
+    void Flip()
     {
-      Colors.Red => Colors.Blue,
-      Colors.Blue => Colors.Red,
-      _ => Colors.White
-    };
-  }
+        isFlipped = !isFlipped;
+        Color = Color switch
+        {
+            Colors.Red => Colors.Blue,
+            Colors.Blue => Colors.Red,
+            _ => Colors.White
+        };
+    }
 }
+
