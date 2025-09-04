@@ -1,0 +1,16 @@
+﻿<div class="fiche" style="background-color: @Color;" @onclick="Flip"/>
+
+@code {
+  [Parameter]
+  public Colors Color { get; set; }
+
+  void Flip()
+  {
+    Color = Color switch
+    {
+      Colors.Red => Colors.Blue,
+      Colors.Blue => Colors.Red,
+      _ => Colors.White
+    };
+  }
+}

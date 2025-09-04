@@ -1,0 +1,16 @@
+﻿<div class="Board">
+  @for (int row = 0; row < Height; row++)
+  {
+    @for (int column = 0; column < Width; column++)
+    {
+      <Fiche Color="Colors.White"/>
+    }
+  }
+</div>
+
+@code {
+  public int Width { get; set; } = 8;
+
+  public int Height { get; set; } = 8;
+
+}
