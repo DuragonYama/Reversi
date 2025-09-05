@@ -1,21 +1,26 @@
 ﻿@* <div class="fiche" style="background-color: @Color;" @onclick="Flip"/> *@
-<div class="fiche @(isFlipped ? "flip" : "")" style="background-color: @(Color == Colors.Red ? "red" : Color == Colors.Blue ? "blue" : "white");" @onclick="Flip" />
+@* <div class="fiche @(isFlipped ? "flip" : "")" style="background-color: @(Color == Colors.Red ? "red" : Color == Colors.Blue ? "blue" : "white");" @onclick="Flip" /> *@
+<div class="fiche"
+     style="background-color: @(Color == Colors.Red ? "red" : Color == Colors.Blue ? "blue" : "white")"
+     @onclick="OnClick" />
+
+
+
+
 
 @code {
     [Parameter]
     public Colors Color { get; set; }
 
-    private bool isFlipped = false;
+    [Parameter]
+    public EventCallback Flipped { get; set; }
 
-    void Flip()
+    private async Task OnClick()
     {
-        isFlipped = !isFlipped;
-        Color = Color switch
-        {
-            Colors.Red => Colors.Blue,
-            Colors.Blue => Colors.Red,
-            _ => Colors.White
-        };
+        Console.WriteLine("Fiche clicked");
+        await Flipped.InvokeAsync();
     }
+
 }
+
 

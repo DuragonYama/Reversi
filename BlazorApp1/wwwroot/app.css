@@ -39,7 +39,9 @@ h1:focus {
 .fiche.flip {
     transform: rotateY(180deg);
 }
-
+.fiche:hover {
+    cursor: pointer;
+}
 
 body {
     display: flex;
@@ -49,17 +51,24 @@ body {
 }
 .Board {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     background-color:cornsilk;
+    border: 3px solid black;
 }
 .row {
-    border: solid 3px black;
     display: flex;
     gap: 5px;
     padding: 5px;
+    flex-direction: column;
 }
 .column {
     display: flex;
     flex-direction: column;
-    gap: 5px
+    gap: 5px;
+    border: solid black 3px;
+}
+.player {
+    display: flex;
+    position: absolute;
+    top: 0px;
 }

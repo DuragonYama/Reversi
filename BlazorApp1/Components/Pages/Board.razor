@@ -1,39 +1,103 @@
-﻿<div class="Board">
-    <div class="row">
-        @for (int row = 0; row < Height; row++)
-        {
-            <div class="column">
-                @for (int column = 0; column < Width; column++)
-                {
-                    <Fiche Color="@Boardstate[row, column]" />
-                }
-            </div>
-        }
-    </div>
+﻿<h1 class="player">@Player</h1>
+<div class="Board">
+    @for (int row = 0; row < Height; row++)
+    {
+        <div class="row">
+            @for (int column = 0; column < Width; column++)
+            {
+                var r = row;
+                var c = column;
+                <Fiche Color="@Boardstate[r][c]" Flipped="@(() => ChangeColor(r, c))" />
+            }
+        </div>
+    }
 </div>
 
 @code {
     public int Width { get; set; } = 8;
     public int Height { get; set; } = 8;
 
-    public Colors[,] Boardstate { get; set; }
+    public Colors[][] Boardstate { get; set; } = new Colors[8][]
+    {
+        new Colors[8], new Colors[8], new Colors[8], new Colors[8],
+        new Colors[8], new Colors[8], new Colors[8], new Colors[8]
+    };
 
-    public bool IsPlayerOneTurn { get; set; } = true;
+
+
+    public Colors Player { get; set; } = Colors.Blue;
+
+    void ChangePlayer() => Player = Player == Colors.Red ? Colors.Blue : Colors.Red;
 
     protected override void OnInitialized()
     {
-        Boardstate = new Colors[Height, Width];
-
+        Boardstate = new Colors[Height][];
         for (int row = 0; row < Height; row++)
         {
+            Boardstate[row] = new Colors[Width];
             for (int col = 0; col < Width; col++)
             {
-                Boardstate[row, col] = Colors.White;
+                Boardstate[row][col] = Colors.White;
             }
         }
-        Boardstate[3, 3] = Colors.Blue;
-        Boardstate[3, 4] = Colors.Blue;
-        Boardstate[4, 3] = Colors.Red;
-        Boardstate[4, 4] = Colors.Red;
+        Boardstate[3][3] = Colors.Blue;
+        Boardstate[3][4] = Colors.Blue;
+        Boardstate[4][3] = Colors.Red;
+        Boardstate[4][4] = Colors.Red;
+    }
+
+    public void ChangeColor(int row, int column)
+    {
+        if (Boardstate[row][column] == Colors.White)
+        {
+            bool validMove = false;
+            var directions = new (int directionRow, int directionColumn)[]
+            {
+            (-1, 0), (1, 0), (0, -1), (0, 1),     // Up, Down, Left, Right
+            (-1, -1), (-1, 1), (1, -1), (1, 1)    // LeftUp, leftDown, RightUp, RightDown
+            };
+
+            var opponent = Player == Colors.Red ? Colors.Blue : Colors.Red;
+            List<(int, int)> validPositions = new List<(int, int)>();
+
+            foreach (var (dr, dc) in directions)
+            {
+                int r = row + dr;
+                int c = column + dc;
+                List<(int, int)> tempPositions = new List<(int, int)>();
+                bool DifferentColorInbetween = false;
+
+                while (r >= 0 && r < Height && c >= 0 && c < Width)
+                {
+                    if (Boardstate[r][c] == opponent)
+                    {
+                        DifferentColorInbetween = true;
+                        tempPositions.Add((r, c));
+                        r += dr;
+                        c += dc;
+                    }
+                    else if (Boardstate[r][c] == Player && DifferentColorInbetween)
+                    {
+                        validMove = true;
+                        validPositions.AddRange(tempPositions);
+                        break;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+            }
+
+            if (validMove)
+            {
+                Boardstate[row][column] = Player;
+                foreach (var (r, c) in validPositions)
+                {
+                    Boardstate[r][c] = Player;
+                }
+                ChangePlayer();
+            }
+        }
     }
 }
