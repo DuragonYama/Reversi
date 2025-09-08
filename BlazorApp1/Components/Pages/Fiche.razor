@@ -1,11 +1,6 @@
-﻿@* <div class="fiche" style="background-color: @Color;" @onclick="Flip"/> *@
-@* <div class="fiche @(isFlipped ? "flip" : "")" style="background-color: @(Color == Colors.Red ? "red" : Color == Colors.Blue ? "blue" : "white");" @onclick="Flip" /> *@
-<div class="fiche"
+﻿<div class="fiche @(FlipAnimation ? "flip" : "")"
      style="background-color: @(Color == Colors.Red ? "red" : Color == Colors.Blue ? "blue" : "white")"
      @onclick="OnClick" />
-
-
-
 
 
 @code {
@@ -14,6 +9,10 @@
 
     [Parameter]
     public EventCallback Flipped { get; set; }
+
+    [Parameter]
+    public bool FlipAnimation { get; set; }
+
 
     private async Task OnClick()
     {

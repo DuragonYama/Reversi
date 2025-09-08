@@ -1,21 +1,40 @@
-﻿<h1 class="player">@Player</h1>
-<div class="Board">
-    @for (int row = 0; row < Height; row++)
-    {
-        <div class="row">
-            @for (int column = 0; column < Width; column++)
-            {
-                var r = row;
-                var c = column;
-                <Fiche Color="@Boardstate[r][c]" Flipped="@(() => ChangeColor(r, c))" />
-            }
+﻿<div class="Container">
+    <div class="clashBarContainer">
+        <div class="clashBar">
+            <div class="clashSegment blue" style="flex: @amountOfBlues"></div>
+            <div class="clashSegment white" style="flex: @amountOfWhites"></div>
+            <div class="clashSegment red" style="flex: @amountOfReds"></div>
         </div>
-    }
+        <div class="clashLabels">
+            <span class="label blueLabel">Blue: @amountOfBlues</span>
+            <span class="label whiteLabel">White: @amountOfWhites</span>
+            <span class="label redLabel">Red: @amountOfReds</span>
+        </div>
+    </div>
+
+
+
+    <div class="Board @Player.ToString().ToLower()">
+        @for (int row = 0; row < Height; row++)
+        {
+            <div class="row">
+                @for (int column = 0; column < Width; column++)
+                {
+                    var r = row;
+                    var c = column;
+                    <Fiche Color="@Boardstate[r][c]" Flipped="@(() => ChangeColor(r, c))" />
+                }
+            </div>
+        }
+    </div>
 </div>
 
 @code {
     public int Width { get; set; } = 8;
     public int Height { get; set; } = 8;
+    int amountOfReds = 0;
+    int amountOfBlues = 0;
+    int amountOfWhites = 0;
 
     public Colors[][] Boardstate { get; set; } = new Colors[8][]
     {
@@ -44,6 +63,37 @@
         Boardstate[3][4] = Colors.Blue;
         Boardstate[4][3] = Colors.Red;
         Boardstate[4][4] = Colors.Red;
+
+        CountScore();
+    }
+
+    public void CountScore()
+    {
+        amountOfReds = 0;
+        amountOfBlues = 0;
+        amountOfWhites = 0;
+
+        for (int row = 0; row < Boardstate.Length; row++)
+        {
+            for (int col = 0; col < Boardstate[row].Length; col++)
+            {
+                Colors currentColor = Boardstate[row][col];
+
+                if (currentColor == Colors.Red)
+                {
+                    amountOfReds += 1;
+                }
+                else if (currentColor == Colors.Blue)
+                {
+                    amountOfBlues += 1;
+                }
+                else
+                {
+                    amountOfWhites += 1;
+                }
+            }
+        }
+        Console.WriteLine($"amount of Reds: {amountOfReds}, amount of Blues: {amountOfBlues}, amount of whites: {amountOfWhites}");
     }
 
     public void ChangeColor(int row, int column)
@@ -97,7 +147,59 @@
                     Boardstate[r][c] = Player;
                 }
                 ChangePlayer();
+
+                if (!HasValidMove(Player))
+                {
+                    Console.WriteLine("No valid move, skipping turn");
+                    ChangePlayer();
+                }
+                CountScore();
             }
         }
+    }
+
+    public bool HasValidMove(Colors player)
+    {
+        var opponent = player == Colors.Red ? Colors.Blue : Colors.Red;
+        var directions = new (int directionRow, int directionColumn)[]
+        {
+            (-1, 0), (1, 0), (0, -1), (0, 1),     // Up, Down, Left, Right
+            (-1, -1), (-1, 1), (1, -1), (1, 1)    // LeftUp, leftDown, RightUp, RightDown
+        };
+
+        for (int row = 0; row < Height; row++)
+        {
+            for (int col = 0; col < Width; col++)
+            {
+                if (Boardstate[row][col] != Colors.White)
+                    continue;
+
+                foreach (var (dr, dc) in directions)
+                {
+                    int r = row + dr;
+                    int c = col + dc;
+                    bool DifferentColorInbetween = false;
+
+                    while (r >= 0 && r < Height && c >= 0 && c < Width)
+                    {
+                        if (Boardstate[r][c] == opponent)
+                        {
+                            DifferentColorInbetween = true;
+                            r += dr;
+                            c += dc;
+                        }
+                        else if (Boardstate[r][c] == player && DifferentColorInbetween)
+                        {
+                            return true;
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
     }
 }
