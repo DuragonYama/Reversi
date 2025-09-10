@@ -8,18 +8,18 @@
     public Colors Color { get; set; }
 
     [Parameter]
-    public EventCallback Flipped { get; set; }
+    public int Row { get; set; }
+
+    [Parameter]
+    public int Col { get; set; }
 
     [Parameter]
     public bool FlipAnimation { get; set; }
 
+    [Parameter]
+    public EventCallback<(int row, int col)> Flipped { get; set; }
 
-    private async Task OnClick()
-    {
-        Console.WriteLine("Fiche clicked");
-        await Flipped.InvokeAsync();
-    }
-
+    private async Task OnClick() => await Flipped.InvokeAsync((Row, Col));
 }
 
 

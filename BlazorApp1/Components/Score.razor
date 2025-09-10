@@ -1,0 +1,38 @@
+﻿<div class="clashBarContainer">
+    <div class="clashBar">
+        <div class="clashSegment blue" style="flex: @amountOfBlues"></div>
+        <div class="clashSegment white" style="flex: @amountOfWhites"></div>
+        <div class="clashSegment red" style="flex: @amountOfReds"></div>
+    </div>
+    <div class="clashLabels">
+        <span class="label blueLabel">Blue: @amountOfBlues</span>
+        <span class="label whiteLabel">White: @amountOfWhites</span>
+        <span class="label redLabel">Red: @amountOfReds</span>
+    </div>
+</div>
+@if (amountOfWhites == 0)
+{
+    <div class="winnerMessage">
+        @if (amountOfBlues > amountOfReds)
+        {
+            <span class="Winner">Blue wins!</span>
+        }
+        else if (amountOfReds > amountOfBlues)
+        {
+            <span class="Winner">Red wins!</span>
+        }
+        else
+        {
+            <span class="Winner">🤝 It's a tie!</span>
+        }
+    </div>
+}
+
+
+@code {
+
+    [Parameter] public int amountOfBlues { get; set; }
+    [Parameter] public int amountOfWhites { get; set; }
+    [Parameter] public int amountOfReds { get; set; }
+
+}

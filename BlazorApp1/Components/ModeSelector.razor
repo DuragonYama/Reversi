@@ -1,0 +1,40 @@
+﻿<div class="selectMode">
+    <h3>Select Game Mode:</h3>
+
+    <div class="modeButtons">
+        <button class="modeButton @(Mode == GameMode.TwoPlayers ? "active" : "")"
+                @onclick="() => SetMode(GameMode.TwoPlayers)">
+            2 Players
+        </button>
+        <button class="modeButton @(Mode == GameMode.Easy ? "active" : "")"
+                @onclick="() => SetMode(GameMode.Easy)">
+            Easy
+        </button>
+        <button class="modeButton @(Mode == GameMode.Medium ? "active" : "")"
+                @onclick="() => SetMode(GameMode.Medium)">
+            Medium
+        </button>
+        <button class="modeButton @(Mode == GameMode.Hard ? "active" : "")"
+                @onclick="() => SetMode(GameMode.Hard)">
+            Hard
+        </button>
+    </div>
+</div>
+
+@code {
+
+    async Task SetMode(GameMode mode)
+    {
+        if (mode != Mode)
+        {
+            Mode = mode;
+            await ModeChanged.InvokeAsync(Mode);
+        }
+    }
+
+    public GameMode Mode { get; set; } = GameMode.TwoPlayers;
+
+    [Parameter]
+    public EventCallback<GameMode> ModeChanged { get; set; }
+
+}

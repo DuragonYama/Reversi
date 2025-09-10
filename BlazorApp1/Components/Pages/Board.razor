@@ -1,35 +1,27 @@
-﻿<div class="Container">
-    <div class="clashBarContainer">
-        <div class="clashBar">
-            <div class="clashSegment blue" style="flex: @amountOfBlues"></div>
-            <div class="clashSegment white" style="flex: @amountOfWhites"></div>
-            <div class="clashSegment red" style="flex: @amountOfReds"></div>
+﻿<Score amountOfBlues="@amountOfBlues" amountOfWhites="@amountOfWhites" amountOfReds="@amountOfReds"/>
+<div class="Board @Player.ToString().ToLower()">
+    @for (int row = 0; row < Height; row++)
+    {
+        <div class="row">
+            @for (int column = 0; column < Width; column++)
+            {
+                var r = row;
+                var c = column;
+                <Fiche Color="@Boardstate[r][c]" Row="@r" Col="@c" Flipped="Play" />
+            }
         </div>
-        <div class="clashLabels">
-            <span class="label blueLabel">Blue: @amountOfBlues</span>
-            <span class="label whiteLabel">White: @amountOfWhites</span>
-            <span class="label redLabel">Red: @amountOfReds</span>
-        </div>
-    </div>
-
-
-
-    <div class="Board @Player.ToString().ToLower()">
-        @for (int row = 0; row < Height; row++)
-        {
-            <div class="row">
-                @for (int column = 0; column < Width; column++)
-                {
-                    var r = row;
-                    var c = column;
-                    <Fiche Color="@Boardstate[r][c]" Flipped="@(() => ChangeColor(r, c))" />
-                }
-            </div>
-        }
-    </div>
+    }
 </div>
 
+<ModeSelector ModeChanged="ModeSelected" />
+
 @code {
+    public GameMode SelectedMode { get; set; } = GameMode.TwoPlayers;
+    void ModeSelected(GameMode newMode)
+    {
+        SelectedMode = newMode;
+    }
+
     public int Width { get; set; } = 8;
     public int Height { get; set; } = 8;
     int amountOfReds = 0;
@@ -42,29 +34,18 @@
         new Colors[8], new Colors[8], new Colors[8], new Colors[8]
     };
 
-
-
-    public Colors Player { get; set; } = Colors.Blue;
-
-    void ChangePlayer() => Player = Player == Colors.Red ? Colors.Blue : Colors.Red;
-
-    protected override void OnInitialized()
+    async Task Play((int r, int c) pos)
     {
-        Boardstate = new Colors[Height][];
-        for (int row = 0; row < Height; row++)
+        if (SelectedMode == GameMode.TwoPlayers || (Player == Colors.Blue && Boardstate[pos.r][pos.c] == Colors.White))
         {
-            Boardstate[row] = new Colors[Width];
-            for (int col = 0; col < Width; col++)
+            ChangeColor(pos.r, pos.c);
+
+            if (SelectedMode != GameMode.TwoPlayers && Player == Colors.Red)
             {
-                Boardstate[row][col] = Colors.White;
+                await Task.Delay(1000); // 1 second delay
+                GiveTurnToBot(SelectedMode);
             }
         }
-        Boardstate[3][3] = Colors.Blue;
-        Boardstate[3][4] = Colors.Blue;
-        Boardstate[4][3] = Colors.Red;
-        Boardstate[4][4] = Colors.Red;
-
-        CountScore();
     }
 
     public void CountScore()
@@ -94,6 +75,29 @@
             }
         }
         Console.WriteLine($"amount of Reds: {amountOfReds}, amount of Blues: {amountOfBlues}, amount of whites: {amountOfWhites}");
+    }
+
+    public Colors Player { get; set; } = Colors.Blue;
+
+    void ChangePlayer() => Player = Player == Colors.Red ? Colors.Blue : Colors.Red;
+
+    protected override void OnInitialized()
+    {
+        Boardstate = new Colors[Height][];
+        for (int row = 0; row < Height; row++)
+        {
+            Boardstate[row] = new Colors[Width];
+            for (int col = 0; col < Width; col++)
+            {
+                Boardstate[row][col] = Colors.White;
+            }
+        }
+        Boardstate[3][3] = Colors.Blue;
+        Boardstate[3][4] = Colors.Blue;
+        Boardstate[4][3] = Colors.Red;
+        Boardstate[4][4] = Colors.Red;
+
+        CountScore();
     }
 
     public void ChangeColor(int row, int column)
@@ -152,6 +156,7 @@
                 {
                     Console.WriteLine("No valid move, skipping turn");
                     ChangePlayer();
+                    if (SelectedMode != GameMode.TwoPlayers) GiveTurnToBot(SelectedMode);
                 }
                 CountScore();
             }
@@ -202,4 +207,83 @@
         }
         return false;
     }
+
+    void SetMode(GameMode mode)
+    {
+        SelectedMode = mode;
+        Console.WriteLine($"Game mode set to: {mode}");
+    }
+
+    void GiveTurnToBot(GameMode mode)
+    {
+        Console.WriteLine(mode);
+
+        var move = GetBotMove(Player, SelectedMode);
+        if (move.HasValue)
+        {
+            ChangeColor(move.Value.row, move.Value.col);
+        }
+    }
+
+    (int row, int col)? GetBotMove(Colors botColor, GameMode mode)
+    {
+        List<(int, int)> validMoves = new();
+
+        for (int row = 0; row < Height; row++)
+        {
+            for (int col = 0; col < Width; col++)
+            {
+                if (Boardstate[row][col] == Colors.White)
+                {
+                    if (IsValidMove(row, col, botColor))
+                    {
+                        validMoves.Add((row, col));
+                    }
+                }
+            }
+        }
+
+        if (validMoves.Count == 0)
+            return null;
+
+        return validMoves[new Random().Next(validMoves.Count)];
+    }
+
+    bool IsValidMove(int row, int col, Colors player)
+    {
+        var opponent = player == Colors.Red ? Colors.Blue : Colors.Red;
+        var directions = new (int, int)[]
+        {
+        (-1, 0), (1, 0), (0, -1), (0, 1),
+        (-1, -1), (-1, 1), (1, -1), (1, 1)
+        };
+
+        foreach (var (dr, dc) in directions)
+        {
+            int r = row + dr;
+            int c = col + dc;
+            bool foundOpponent = false;
+
+            while (r >= 0 && r < Height && c >= 0 && c < Width)
+            {
+                if (Boardstate[r][c] == opponent)
+                {
+                    foundOpponent = true;
+                    r += dr;
+                    c += dc;
+                }
+                else if (Boardstate[r][c] == player && foundOpponent)
+                {
+                    return true;
+                }
+                else
+                {
+                    break;
+                }
+            }
+        }
+
+        return false;
+    }
+
 }
