@@ -1,4 +1,4 @@
-﻿<Score amountOfBlues="@amountOfBlues" amountOfWhites="@amountOfWhites" amountOfReds="@amountOfReds"/>
+﻿<Score amountOfBlues="@amountOfBlues" amountOfWhites="@amountOfWhites" amountOfReds="@amountOfReds" />
 <div class="Board @Player.ToString().ToLower()">
     @for (int row = 0; row < Height; row++)
     {
@@ -7,7 +7,10 @@
             {
                 var r = row;
                 var c = column;
-                <Fiche Color="@Boardstate[r][c]" Row="@r" Col="@c" Flipped="Play" />
+                @* <Fiche Color="@Boardstate[r][c]" Row="@r" Col="@c" Flipped="Play" /> *@
+                <Fiche Color="@Boardstate[r][c]" Row="@r" Col="@c" Flipped="Play">
+                    <span>@PositionValue[r][c]</span>
+                </Fiche>
             }
         </div>
     }
@@ -34,16 +37,31 @@
         new Colors[8], new Colors[8], new Colors[8], new Colors[8]
     };
 
+    public int[][] PositionValue { get; set; } = new int[8][]
+    {
+        new int[8] { 100, -20, 10, 5, 5, 10, -20, 100 },
+        new int[8] { -20, -50, -2, -2, -2, -2, -50, -20 },
+        new int[8] { 10, -2, 5, 1, 1, 5, -2, 10 },
+        new int[8] { 5, -2, 1, 0, 0, 1, -2, 5 },
+        new int[8] { 5, -2, 1, 0, 0, 1, -2, 5 },
+        new int[8] { 10, -2, 5, 1, 1, 5, -2, 10 },
+        new int[8] { -20, -50, -2, -2, -2, -2, -50, -20 },
+        new int[8] { 100, -20, 10, 5, 5, 10, -20, 100 }
+    };
+
     async Task Play((int r, int c) pos)
     {
         if (SelectedMode == GameMode.TwoPlayers || (Player == Colors.Blue && Boardstate[pos.r][pos.c] == Colors.White))
         {
-            ChangeColor(pos.r, pos.c);
-
-            if (SelectedMode != GameMode.TwoPlayers && Player == Colors.Red)
+            bool moveWasValid = ChangeColor(pos.r, pos.c, Player);
+            if (moveWasValid)
             {
-                await Task.Delay(1000); // 1 second delay
-                GiveTurnToBot(SelectedMode);
+                ChangePlayer();
+                if (SelectedMode != GameMode.TwoPlayers && Player == Colors.Red)
+                {
+                    await Task.Delay(1000);
+                    GiveTurnToBot(SelectedMode);
+                }
             }
         }
     }
@@ -92,76 +110,73 @@
                 Boardstate[row][col] = Colors.White;
             }
         }
-        Boardstate[3][3] = Colors.Blue;
+        Boardstate[3][3] = Colors.Red;
         Boardstate[3][4] = Colors.Blue;
-        Boardstate[4][3] = Colors.Red;
+        Boardstate[4][3] = Colors.Blue;
         Boardstate[4][4] = Colors.Red;
 
         CountScore();
     }
 
-    public void ChangeColor(int row, int column)
+    public bool ChangeColor(int row, int column, Colors player)
     {
-        if (Boardstate[row][column] == Colors.White)
+        if (Boardstate[row][column] != Colors.White)
+            return false;
+
+        Console.WriteLine($"Evaluating ({row},{column}) → Value: {PositionValue[row][column]}");
+        bool validMove = false;
+        var directions = new (int directionRow, int directionColumn)[]
         {
-            bool validMove = false;
-            var directions = new (int directionRow, int directionColumn)[]
+        (-1, 0), (1, 0), (0, -1), (0, 1),
+        (-1, -1), (-1, 1), (1, -1), (1, 1)
+        };
+
+        var opponent = player == Colors.Red ? Colors.Blue : Colors.Red;
+        List<(int, int)> validPositions = new();
+
+        foreach (var (dr, dc) in directions)
+        {
+            int r = row + dr;
+            int c = column + dc;
+            List<(int, int)> tempPositions = new();
+            bool DifferentColorInbetween = false;
+
+            while (r >= 0 && r < Height && c >= 0 && c < Width)
             {
-            (-1, 0), (1, 0), (0, -1), (0, 1),     // Up, Down, Left, Right
-            (-1, -1), (-1, 1), (1, -1), (1, 1)    // LeftUp, leftDown, RightUp, RightDown
-            };
-
-            var opponent = Player == Colors.Red ? Colors.Blue : Colors.Red;
-            List<(int, int)> validPositions = new List<(int, int)>();
-
-            foreach (var (dr, dc) in directions)
-            {
-                int r = row + dr;
-                int c = column + dc;
-                List<(int, int)> tempPositions = new List<(int, int)>();
-                bool DifferentColorInbetween = false;
-
-                while (r >= 0 && r < Height && c >= 0 && c < Width)
+                if (Boardstate[r][c] == opponent)
                 {
-                    if (Boardstate[r][c] == opponent)
-                    {
-                        DifferentColorInbetween = true;
-                        tempPositions.Add((r, c));
-                        r += dr;
-                        c += dc;
-                    }
-                    else if (Boardstate[r][c] == Player && DifferentColorInbetween)
-                    {
-                        validMove = true;
-                        validPositions.AddRange(tempPositions);
-                        break;
-                    }
-                    else
-                    {
-                        break;
-                    }
+                    DifferentColorInbetween = true;
+                    tempPositions.Add((r, c));
+                    r += dr;
+                    c += dc;
                 }
-            }
-
-            if (validMove)
-            {
-                Boardstate[row][column] = Player;
-                foreach (var (r, c) in validPositions)
+                else if (Boardstate[r][c] == player && DifferentColorInbetween)
                 {
-                    Boardstate[r][c] = Player;
+                    validMove = true;
+                    validPositions.AddRange(tempPositions);
+                    break;
                 }
-                ChangePlayer();
-
-                if (!HasValidMove(Player))
+                else
                 {
-                    Console.WriteLine("No valid move, skipping turn");
-                    ChangePlayer();
-                    if (SelectedMode != GameMode.TwoPlayers) GiveTurnToBot(SelectedMode);
+                    break;
                 }
-                CountScore();
             }
         }
+
+        if (validMove)
+        {
+            Boardstate[row][column] = player;
+            foreach (var (r, c) in validPositions)
+            {
+                Boardstate[r][c] = player;
+            }
+            CountScore();
+            return true;
+        }
+
+        return false;
     }
+
 
     public bool HasValidMove(Colors player)
     {
@@ -218,14 +233,51 @@
     {
         Console.WriteLine(mode);
 
-        var move = GetBotMove(Player, SelectedMode);
+        Colors botColor = Player;
+
+        (int row, int col)? move = mode switch
+        {
+            GameMode.Easy => GetRandomBotMove(botColor, mode),
+            GameMode.Medium => GetSmartBotMove(botColor),
+            GameMode.Hard => GetAdvancedBotMove(botColor),
+            _ => null
+        };
+
         if (move.HasValue)
         {
-            ChangeColor(move.Value.row, move.Value.col);
+            bool moveWasValid = ChangeColor(move.Value.row, move.Value.col, botColor);
+            if (moveWasValid)
+            {
+                ChangePlayer();
+
+                if (!HasValidMove(Player))
+                {
+                    Console.WriteLine("No valid move, skipping turn");
+                    ChangePlayer();
+                    GiveTurnToBot(SelectedMode);
+                }
+            }
+        }
+        else
+        {
+            Console.WriteLine("Bot has no valid moves. Skipping turn.");
+            ChangePlayer();
+
+            if (!HasValidMove(Player))
+            {
+                Console.WriteLine("Next player also has no valid moves. Game might be over.");
+            }
+            else if (SelectedMode != GameMode.TwoPlayers && Player == Colors.Red)
+            {
+                GiveTurnToBot(SelectedMode);
+            }
         }
     }
 
-    (int row, int col)? GetBotMove(Colors botColor, GameMode mode)
+
+
+
+    (int row, int col)? GetRandomBotMove(Colors botColor, GameMode mode)
     {
         List<(int, int)> validMoves = new();
 
@@ -247,6 +299,58 @@
             return null;
 
         return validMoves[new Random().Next(validMoves.Count)];
+    }
+
+    (int row, int col)? GetSmartBotMove(Colors botColor)
+    {
+        List<(int row, int col, int flipCount)> moves = new();
+
+        for (int row = 0; row < Height; row++)
+        {
+            for (int col = 0; col < Width; col++)
+            {
+                if (Boardstate[row][col] == Colors.White && IsValidMove(row, col, botColor))
+                {
+                    int flipCount = CountFlippablePieces(row, col, botColor);
+                    moves.Add((row, col, flipCount));
+                }
+            }
+        }
+
+        if (moves.Count == 0)
+            return null;
+
+        return moves.OrderByDescending(m => m.flipCount).First() switch
+        {
+            var best => (best.row, best.col)
+        };
+    }
+
+    (int row, int col)? GetAdvancedBotMove(Colors botColor)
+    {
+        List<(int row, int col, int score)> moves = new();
+
+        for (int row = 0; row < Height; row++)
+        {
+            for (int col = 0; col < Width; col++)
+            {
+                if (Boardstate[row][col] == Colors.White && IsValidMove(row, col, botColor))
+                {
+                    int flipCount = CountFlippablePieces(row, col, botColor);
+                    int positionScore = PositionValue[row][col];
+                    int totalScore = flipCount * 2 + positionScore;
+                    moves.Add((row, col, totalScore));
+                }
+            }
+        }
+
+        if (moves.Count == 0)
+            return null;
+
+        return moves.OrderByDescending(m => m.score).First() switch
+        {
+            var best => (best.row, best.col)
+        };
     }
 
     bool IsValidMove(int row, int col, Colors player)
@@ -284,6 +388,48 @@
         }
 
         return false;
+    }
+
+    int CountFlippablePieces(int row, int col, Colors player)
+    {
+        var opponent = player == Colors.Red ? Colors.Blue : Colors.Red;
+        var directions = new (int, int)[]
+        {
+        (-1, 0), (1, 0), (0, -1), (0, 1),
+        (-1, -1), (-1, 1), (1, -1), (1, 1)
+        };
+
+        int count = 0;
+
+        foreach (var (dr, dc) in directions)
+        {
+            int r = row + dr;
+            int c = col + dc;
+            int tempCount = 0;
+            bool foundOpponent = false;
+
+            while (r >= 0 && r < Height && c >= 0 && c < Width)
+            {
+                if (Boardstate[r][c] == opponent)
+                {
+                    foundOpponent = true;
+                    tempCount++;
+                    r += dr;
+                    c += dc;
+                }
+                else if (Boardstate[r][c] == player && foundOpponent)
+                {
+                    count += tempCount;
+                    break;
+                }
+                else
+                {
+                    break;
+                }
+            }
+        }
+
+        return count;
     }
 
 }

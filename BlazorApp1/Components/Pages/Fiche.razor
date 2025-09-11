@@ -1,7 +1,6 @@
 ﻿<div class="fiche @(FlipAnimation ? "flip" : "")"
-     style="background-color: @(Color == Colors.Red ? "red" : Color == Colors.Blue ? "blue" : "white")"
-     @onclick="OnClick" />
-
+     style="background-color: @Color.ToString()"
+     @onclick="OnClick"> @ChildContent</div>
 
 @code {
     [Parameter]
@@ -20,6 +19,9 @@
     public EventCallback<(int row, int col)> Flipped { get; set; }
 
     private async Task OnClick() => await Flipped.InvokeAsync((Row, Col));
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
 }
 
 

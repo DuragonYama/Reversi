@@ -10,7 +10,7 @@
         <span class="label redLabel">Red: @amountOfReds</span>
     </div>
 </div>
-@if (amountOfWhites == 0)
+@if (amountOfWhites == 0 || amountOfReds == 0 || amountOfBlues == 0)
 {
     <div class="winnerMessage">
         @if (amountOfBlues > amountOfReds)
@@ -23,7 +23,7 @@
         }
         else
         {
-            <span class="Winner">🤝 It's a tie!</span>
+            <span class="Winner">It's a tie!</span>
         }
     </div>
 }
