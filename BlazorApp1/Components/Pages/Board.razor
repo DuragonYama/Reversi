@@ -1,4 +1,4 @@
-﻿<Score amountOfBlues="@amountOfBlues" amountOfWhites="@amountOfWhites" amountOfReds="@amountOfReds" />
+﻿<Score amountOfBlues="@amountOfBlues" amountOfWhites="@amountOfWhites" amountOfReds="@amountOfReds" restartGame="OnInitialized" gameOver="@gameOver" />
 <div class="Board @Player.ToString().ToLower()">
     @for (int row = 0; row < Height; row++)
     {
@@ -7,10 +7,11 @@
             {
                 var r = row;
                 var c = column;
-                @* <Fiche Color="@Boardstate[r][c]" Row="@r" Col="@c" Flipped="Play" /> *@
-                <Fiche Color="@Boardstate[r][c]" Row="@r" Col="@c" Flipped="Play">
+                <Fiche Color="@Boardstate[r][c]" Row="@r" Col="@c" Flipped="Play" />
+                //Dit laat de value van elk position op de website zien
+                @* <Fiche Color="@Boardstate[r][c]" Row="@r" Col="@c" Flipped="Play">
                     <span>@PositionValue[r][c]</span>
-                </Fiche>
+                </Fiche> *@
             }
         </div>
     }
@@ -22,6 +23,7 @@
     public GameMode SelectedMode { get; set; } = GameMode.TwoPlayers;
     void ModeSelected(GameMode newMode)
     {
+        OnInitialized();
         SelectedMode = newMode;
     }
 
@@ -30,6 +32,7 @@
     int amountOfReds = 0;
     int amountOfBlues = 0;
     int amountOfWhites = 0;
+    bool gameOver = false;
 
     public Colors[][] Boardstate { get; set; } = new Colors[8][]
     {
@@ -57,6 +60,14 @@
             if (moveWasValid)
             {
                 ChangePlayer();
+                CheckBothPlayers();
+                if (!HasValidMove(Player))
+                {
+                    Console.WriteLine("No valid move, skipping turn");
+                    CheckBothPlayers();
+                    ChangePlayer();
+                }
+
                 if (SelectedMode != GameMode.TwoPlayers && Player == Colors.Red)
                 {
                     await Task.Delay(1000);
@@ -101,6 +112,7 @@
 
     protected override void OnInitialized()
     {
+        gameOver = false;
         Boardstate = new Colors[Height][];
         for (int row = 0; row < Height; row++)
         {
@@ -116,6 +128,15 @@
         Boardstate[4][4] = Colors.Red;
 
         CountScore();
+        if (Player == Colors.Red) ChangePlayer();
+    }
+
+    public void CheckBothPlayers()
+    {
+        if (!HasValidMove(Colors.Blue) && !HasValidMove(Colors.Red))
+        {
+            gameOver = true;
+        }
     }
 
     public bool ChangeColor(int row, int column, Colors player)
@@ -231,45 +252,48 @@
 
     void GiveTurnToBot(GameMode mode)
     {
-        Console.WriteLine(mode);
-
-        Colors botColor = Player;
-
-        (int row, int col)? move = mode switch
+        if (Player != Colors.Blue)
         {
-            GameMode.Easy => GetRandomBotMove(botColor, mode),
-            GameMode.Medium => GetSmartBotMove(botColor),
-            GameMode.Hard => GetAdvancedBotMove(botColor),
-            _ => null
-        };
+            Console.WriteLine(mode);
 
-        if (move.HasValue)
-        {
-            bool moveWasValid = ChangeColor(move.Value.row, move.Value.col, botColor);
-            if (moveWasValid)
+            Colors botColor = Player;
+
+            (int row, int col)? move = mode switch
             {
+                GameMode.Easy => GetRandomBotMove(botColor, mode),
+                GameMode.Medium => GetSmartBotMove(botColor),
+                GameMode.Hard => GetAdvancedBotMove(botColor),
+                _ => null
+            };
+
+            if (move.HasValue)
+            {
+                bool moveWasValid = ChangeColor(move.Value.row, move.Value.col, botColor);
+                if (moveWasValid)
+                {
+                    ChangePlayer();
+
+                    if (!HasValidMove(Player))
+                    {
+                        Console.WriteLine("No valid move, skipping turn");
+                        ChangePlayer();
+                        GiveTurnToBot(SelectedMode);
+                    }
+                }
+            }
+            else
+            {
+                Console.WriteLine("Bot has no valid moves. Skipping turn.");
                 ChangePlayer();
 
                 if (!HasValidMove(Player))
                 {
-                    Console.WriteLine("No valid move, skipping turn");
-                    ChangePlayer();
+                    Console.WriteLine("Next player also has no valid moves. Game might be over.");
+                }
+                else if (SelectedMode != GameMode.TwoPlayers && Player == Colors.Red)
+                {
                     GiveTurnToBot(SelectedMode);
                 }
-            }
-        }
-        else
-        {
-            Console.WriteLine("Bot has no valid moves. Skipping turn.");
-            ChangePlayer();
-
-            if (!HasValidMove(Player))
-            {
-                Console.WriteLine("Next player also has no valid moves. Game might be over.");
-            }
-            else if (SelectedMode != GameMode.TwoPlayers && Player == Colors.Red)
-            {
-                GiveTurnToBot(SelectedMode);
             }
         }
     }
@@ -431,5 +455,4 @@
 
         return count;
     }
-
 }

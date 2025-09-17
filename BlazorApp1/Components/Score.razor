@@ -10,20 +10,20 @@
         <span class="label redLabel">Red: @amountOfReds</span>
     </div>
 </div>
-@if (amountOfWhites == 0 || amountOfReds == 0 || amountOfBlues == 0)
+@if (amountOfWhites == 0 || amountOfReds == 0 || amountOfBlues == 0 || gameOver == true)
 {
     <div class="winnerMessage">
         @if (amountOfBlues > amountOfReds)
         {
-            <span class="Winner">Blue wins!</span>
+            <span class="Winner" @onclick="() => restartGame.InvokeAsync()">Blue wins!<br />press here to restart</span>
         }
         else if (amountOfReds > amountOfBlues)
         {
-            <span class="Winner">Red wins!</span>
+            <span class="Winner" @onclick="() => restartGame.InvokeAsync()">Red wins!<br />press here to restart</span>
         }
         else
         {
-            <span class="Winner">It's a tie!</span>
+            <span class="Winner" @onclick="() => restartGame.InvokeAsync()">It's a tie!<br />press here to restart</span>
         }
     </div>
 }
@@ -34,5 +34,6 @@
     [Parameter] public int amountOfBlues { get; set; }
     [Parameter] public int amountOfWhites { get; set; }
     [Parameter] public int amountOfReds { get; set; }
-
+    [Parameter] public bool gameOver { get; set; }
+    [Parameter] public EventCallback restartGame { get; set; }
 }
